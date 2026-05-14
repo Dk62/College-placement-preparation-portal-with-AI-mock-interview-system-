@@ -8,7 +8,9 @@ const User = sequelize.define('User', {
   password: { type: DataTypes.STRING, allowNull: false },
   role: { type: DataTypes.ENUM('Student', 'TPO', 'Company', 'Admin'), allowNull: false },
   is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
-  google_id: { type: DataTypes.STRING, allowNull: true }
+  google_id: { type: DataTypes.STRING, allowNull: true },
+  profile_pic: { type: DataTypes.STRING, allowNull: true },
+  profile_pic_public_id: { type: DataTypes.STRING, allowNull: true }
 }, { timestamps: true });
 
 module.exports = User;

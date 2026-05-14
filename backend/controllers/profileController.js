@@ -1,6 +1,7 @@
 const { StudentProfile, TPOProfile, CompanyProfile, User, MockSession, TestResult } = require('../models');
 const { generateResume } = require('../utils/resumeGenerator');
 const { getResumeAnalysis } = require('../utils/aiService');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryService');
 const pdfParse = require('pdf-parse');
 const fs = require('fs');
 const path = require('path');
@@ -161,3 +162,45 @@ exports.analyzeUploadedResume = async (req, res) => {
     res.status(500).json({ success: false, message: error.message || 'Server error during resume parsing and analysis' });
   }
 };
+
+// @desc    Upload user profile avatar
+// @route   POST /api/profiles/avatar
+// @access  Private
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please upload an image file' });
+    }
+
+    // Locate existing user record to handle legacy cleanup
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User record not found' });
+    }
+
+    // If user already has an avatar on Cloudinary, delete it to prevent bloat
+    if (user.profile_pic_public_id) {
+      await deleteFromCloudinary(user.profile_pic_public_id);
+    }
+
+    // Dispatch buffer to Cloudinary
+    const folderPath = `avatars/${user.role.toLowerCase()}`;
+    const result = await uploadToCloudinary(req.file.buffer, folderPath);
+
+    // Update Database record with permanent CDN links
+    await user.update({
+      profile_pic: result.secure_url,
+      profile_pic_public_id: result.public_id
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar uploaded successfully to cloud storage',
+      url: result.secure_url
+    });
+  } catch (error) {
+    console.error('Avatar Upload Error:', error);
+    res.status(500).json({ success: false, message: 'Server Error during avatar uploading' });
+  }
+};
+

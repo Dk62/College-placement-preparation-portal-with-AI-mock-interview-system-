@@ -4,7 +4,19 @@ import { Provider } from 'react-redux'
 import { store } from './app/store'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
-import App from './App.jsx'
+import axios from 'axios';
+import App from './App.jsx';
+
+// Standardized Axios Deployment Pipeline
+axios.defaults.withCredentials = true;
+axios.interceptors.request.use((config) => {
+  // Dynamically inject cloud API route if provided by Hosting Providers
+  const cloudApi = import.meta.env.VITE_API_URL;
+  if (cloudApi && config.url && config.url.includes('http://localhost:5000')) {
+    config.url = config.url.replace('http://localhost:5000', cloudApi);
+  }
+  return config;
+}, (error) => Promise.reject(error));
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
