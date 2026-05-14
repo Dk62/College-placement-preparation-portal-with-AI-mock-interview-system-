@@ -345,7 +345,7 @@ const ResumeBuilder = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-8">
                   <div>
                     <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Project Title</label>
-                    <input type="text" value={proj.title} onChange={(e) => handleProjectChange(index, 'title', e.target.value)} placeholder="e.g., College Placement Portal" className="w-full p-3 border rounded-lg dark:bg-[#1f2028] dark:border-gray-600 focus:ring-2 focus:ring-[#aa3bff] outline-none" />
+                    <input type="text" value={proj.title} onChange={(e) => handleProjectChange(index, 'title', e.target.value)} placeholder="e.g., College Placement Preparation Portal" className="w-full p-3 border rounded-lg dark:bg-[#1f2028] dark:border-gray-600 focus:ring-2 focus:ring-[#aa3bff] outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Project Link</label>

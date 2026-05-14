@@ -10,7 +10,10 @@ const User = sequelize.define('User', {
   is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
   google_id: { type: DataTypes.STRING, allowNull: true },
   profile_pic: { type: DataTypes.STRING, allowNull: true },
-  profile_pic_public_id: { type: DataTypes.STRING, allowNull: true }
+  profile_pic_public_id: { type: DataTypes.STRING, allowNull: true },
+  phone: { type: DataTypes.STRING, allowNull: true, unique: true },
+  reset_password_otp: { type: DataTypes.STRING, allowNull: true },
+  reset_password_expires: { type: DataTypes.DATE, allowNull: true }
 }, { timestamps: true });
 
 module.exports = User;

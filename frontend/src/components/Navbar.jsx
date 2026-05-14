@@ -100,7 +100,8 @@ const Navbar = () => {
                 <Globe className="text-white w-6 h-6 absolute" style={{ zIndex: -1 }} />
               </div>
               <div className="flex flex-col">
-                <span className="font-extrabold text-lg text-[#1e3a8a] leading-tight tracking-tight">PLACEMENT PORTAL</span>
+                <span className="font-extrabold text-md text-[#1e3a8a] leading-none tracking-tight">PLACEMENT</span>
+                <span className="font-bold text-[10px] text-gray-500 dark:text-gray-400 leading-tight uppercase tracking-wider mt-0.5">Preparation Portal</span>
               </div>
             </Link>
           </div>

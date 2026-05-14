@@ -59,7 +59,7 @@ const Register = () => {
       <div className="bg-white dark:bg-[#1f2028] p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 dark:border-[#2e303a]">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create an Account</h1>
-          <p className="text-gray-500 dark:text-gray-400">Join the GGIMS Placement Portal.</p>
+          <p className="text-gray-500 dark:text-gray-400">Join the Placement Preparation Portal.</p>
         </div>
 
         <div className="flex justify-center mb-6">

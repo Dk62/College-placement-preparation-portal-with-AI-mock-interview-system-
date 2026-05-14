@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AptitudeTest from './pages/AptitudeTest';
 import MockInterview from './pages/MockInterview';
@@ -45,6 +46,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="student-dashboard" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
