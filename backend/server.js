@@ -54,16 +54,17 @@ const init = async () => {
   try {
     // 1. Create Database if it doesn't exist
     const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      host: process.env.MYSQLHOST || process.env.DB_HOST,
+      port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+      user: process.env.MYSQLUSER || process.env.DB_USER,
+      password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
     });
     
     // Database dropping is removed for persistent storage
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\`;`);
+    const targetDbName = process.env.MYSQLDATABASE || process.env.DB_NAME;
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDbName}\`;`);
     await connection.end();
-    console.log(`Database ${process.env.DB_NAME} ensured.`);
+    console.log(`Database ${targetDbName} ensured.`);
 
     // 2. Connect Sequelize and Sync Models
     const { sequelize } = require('./models');

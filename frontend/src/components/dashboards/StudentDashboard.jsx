@@ -65,24 +65,24 @@ const StudentDashboard = () => {
   return (
     <div className="space-y-8">
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-6">
         <button 
           onClick={() => navigate('/resume-builder')} 
-          className="bg-white dark:bg-slate-800 border-2 border-[#1e3a8a] text-[#1e3a8a] dark:text-blue-400 hover:bg-[#1e3a8a] hover:text-white px-5 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
+          className="bg-white dark:bg-slate-800 border-2 border-[#1e3a8a] text-[#1e3a8a] dark:text-blue-400 hover:bg-[#1e3a8a] hover:text-white px-5 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           Update Resume
         </button>
         <button 
           onClick={() => navigate('/resume-analyzer')} 
-          className="bg-white dark:bg-slate-800 border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white px-5 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
+          className="bg-white dark:bg-slate-800 border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white px-5 py-2.5 rounded-lg font-bold transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
           AI Resume Analyzer
         </button>
         <button 
           onClick={() => navigate('/drives')} 
-          className="bg-[#1e3a8a] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-blue-800 transition-colors shadow-md flex items-center gap-2"
+          className="bg-[#1e3a8a] text-white px-5 py-2.5 rounded-lg font-bold hover:bg-blue-800 transition-colors shadow-md flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
           View Job Drives
@@ -90,7 +90,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col justify-center">
           <h3 className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">Current CGPA</h3>
           <p className="text-4xl font-black text-[#1e3a8a] dark:text-blue-400 mt-2">{profile.cgpa || 'N/A'}</p>

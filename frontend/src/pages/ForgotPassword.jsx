@@ -105,7 +105,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="flex justify-center items-center min-h-[85vh] px-4">
-      <div className="bg-white dark:bg-[#1f2028] p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 dark:border-[#2e303a] transition-all duration-300 transform">
+      <div className="bg-white dark:bg-[#1f2028] p-6 sm:p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 dark:border-[#2e303a] transition-all duration-300 transform">
         
         {/* Dynamic Header Indicators */}
         <div className="text-center mb-8">

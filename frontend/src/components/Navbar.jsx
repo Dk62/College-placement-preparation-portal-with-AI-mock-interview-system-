@@ -171,7 +171,9 @@ const Navbar = () => {
 
             <div className="h-6 w-px bg-gray-200 hidden md:block mx-1"></div>
 
-            <ThemeToggle />
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
 
             {user ? (
               <>
@@ -360,6 +362,12 @@ const Navbar = () => {
                 <Link to="/register" className="block w-full text-center py-3 rounded-xl text-base font-bold text-white bg-[#1e3a8a]" onClick={() => setIsMobileMenuOpen(false)}>Create Account</Link>
               </div>
             )}
+            
+            {/* Mobile Theme Toggle */}
+            <div className="pt-4 border-t border-gray-100 flex justify-between items-center px-4">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Portal Theme</span>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}
