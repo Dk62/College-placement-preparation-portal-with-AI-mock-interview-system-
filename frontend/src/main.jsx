@@ -11,8 +11,13 @@ import App from './App.jsx';
 axios.defaults.withCredentials = true;
 axios.interceptors.request.use((config) => {
   // Dynamically inject cloud API route if provided by Hosting Providers
-  const cloudApi = import.meta.env.VITE_API_URL;
+  let cloudApi = import.meta.env.VITE_API_URL;
   if (cloudApi && config.url && config.url.includes('http://localhost:5000')) {
+    // Sanitize user inputs: remove trailing slashes and ensure https:// protocol
+    cloudApi = cloudApi.replace(/\/$/, '');
+    if (!cloudApi.startsWith('http')) {
+      cloudApi = `https://${cloudApi}`;
+    }
     config.url = config.url.replace('http://localhost:5000', cloudApi);
   }
   return config;
