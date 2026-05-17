@@ -62,9 +62,13 @@ const init = async () => {
     
     // Database dropping is removed for persistent storage
     const targetDbName = process.env.MYSQLDATABASE || process.env.DB_NAME;
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDbName}\`;`);
+    try {
+      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDbName}\`;`);
+      console.log(`Database ${targetDbName} ensured.`);
+    } catch (dbError) {
+      console.log(`Skipping DB creation (Managed Cloud Database detected or access restricted).`);
+    }
     await connection.end();
-    console.log(`Database ${targetDbName} ensured.`);
 
     // 2. Connect Sequelize and Sync Models
     const { sequelize } = require('./models');
