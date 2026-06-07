@@ -98,8 +98,22 @@ exports.getQuestionBank = async (req, res) => {
 
 exports.addQuestion = async (req, res) => {
   try {
-    const q = await QuestionBank.create(req.body);
-    await logAction(req.user.id, 'CREATE', 'QuestionBank', `Added MCQ for domain ${q.domain}`);
+    const { question_text, topic, domain, difficulty, options, correct_option } = req.body;
+
+    if (!question_text || !domain || !difficulty || !options || !correct_option) {
+      return res.status(400).json({ success: false, message: 'Missing required question fields.' });
+    }
+
+    const q = await QuestionBank.create({
+      question_text,
+      topic: topic || domain,
+      domain,
+      difficulty,
+      options,          // stored as JSON in DB
+      correct_option,
+    });
+
+    await logAction(req.user.id, 'CREATE', 'QuestionBank', `Added MCQ [${difficulty}] in domain "${domain}": "${question_text.slice(0, 60)}..."`);
     res.status(201).json({ success: true, data: q });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -122,10 +136,16 @@ exports.deleteQuestion = async (req, res) => {
 // --- AUDIT LOGS ---
 exports.getAuditLogs = async (req, res) => {
   try {
+    const { action_type, target_entity, limit = 500 } = req.query;
+    const where = {};
+    if (action_type)    where.action_type    = action_type;
+    if (target_entity)  where.target_entity  = target_entity;
+
     const logs = await AuditLog.findAll({
+      where,
       include: [{ model: User, as: 'AdminUser', attributes: ['name', 'email'] }],
       order: [['createdAt', 'DESC']],
-      limit: 100
+      limit: Math.min(parseInt(limit) || 500, 1000),
     });
     res.json({ success: true, data: logs });
   } catch (error) {

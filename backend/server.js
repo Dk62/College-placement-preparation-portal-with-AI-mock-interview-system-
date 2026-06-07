@@ -63,38 +63,60 @@ const PORT = process.env.PORT || 5000;
 const init = async () => {
   try {
     // 1. Create Database if it doesn't exist
+    console.log('🔍 Attempting to connect to database...');
+    console.log(`   Host: ${process.env.DB_HOST || process.env.MYSQLHOST}`);
+    console.log(`   Port: ${process.env.DB_PORT || process.env.MYSQLPORT || 3306}`);
+    console.log(`   User: ${process.env.DB_USER || process.env.MYSQLUSER}`);
+    console.log(`   Database: ${process.env.DB_NAME || process.env.MYSQLDATABASE}`);
+
     const connection = await mysql.createConnection({
-      host: process.env.MYSQLHOST || process.env.DB_HOST,
-      port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
-      user: process.env.MYSQLUSER || process.env.DB_USER,
-      password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+      host: process.env.DB_HOST || process.env.MYSQLHOST,
+      port: process.env.DB_PORT || process.env.MYSQLPORT || 3306,
+      user: process.env.DB_USER || process.env.MYSQLUSER,
+      password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
     });
     
+    console.log('✅ Connected to MySQL server');
+    
     // Database dropping is removed for persistent storage
-    const targetDbName = process.env.MYSQLDATABASE || process.env.DB_NAME;
+    const targetDbName = process.env.DB_NAME || process.env.MYSQLDATABASE;
     try {
       await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDbName}\`;`);
-      console.log(`Database ${targetDbName} ensured.`);
+      console.log(`✅ Database ${targetDbName} ensured.`);
     } catch (dbError) {
-      console.log(`Skipping DB creation (Managed Cloud Database detected or access restricted).`);
+      console.log(`⚠️  Skipping DB creation (Managed Cloud Database detected or access restricted).`);
     }
     await connection.end();
 
     // 2. Connect Sequelize and Sync Models
+    console.log('🔍 Connecting to Sequelize...');
     const { sequelize } = require('./models');
     await sequelize.authenticate();
-    console.log('Database connected successfully.');
+    console.log('✅ Sequelize database connected successfully.');
     
-    // Sync models (in development, alter: true updates tables without dropping them)
-    await sequelize.sync({ alter: true });
-    console.log('Database synced.');
+    // Sync models — use { alter: false } to avoid MySQL's 64-key-per-table limit.
+    // On first run or after adding new columns, temporarily set alter: true, then revert.
+    // NEVER use { force: true } in production — it drops all tables!
+    console.log('🔍 Syncing database models...');
+    await sequelize.sync({ alter: false });
+    console.log('✅ Database synced.');
 
     // 3. Start Server
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`\n✅ Server is running on port ${PORT}`);
+      console.log(`📍 Frontend should connect to: http://localhost:${PORT}/api/auth/login`);
+      console.log(`🌐 CORS enabled for: http://localhost:5173`);
+      console.log('\n✨ Ready to accept requests!\n');
     });
   } catch (error) {
-    console.error('Failed to initialize server:', error);
+    console.error('\n❌ Failed to initialize server:', error.message);
+    if (error.code === 'ENOTFOUND') {
+      console.error('   └─ Database host not found. Check your DB_HOST in .env');
+    } else if (error.code === 'ECONNREFUSED') {
+      console.error('   └─ Connection refused. Is MySQL running on the specified host:port?');
+    } else if (error.code === 'ER_ACCESS_DENIED_FOR_USER') {
+      console.error('   └─ Access denied. Check DB_USER and DB_PASSWORD in .env');
+    }
     process.exit(1);
   }
 };

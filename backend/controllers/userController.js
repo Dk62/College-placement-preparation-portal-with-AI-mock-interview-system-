@@ -11,6 +11,7 @@ exports.updateUserSettings = async (req, res) => {
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
+      await t.rollback();
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
@@ -23,10 +24,16 @@ exports.updateUserSettings = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Email is already registered to another account' });
       }
       user.email = email;
-      await user.save({ transaction: t });
     }
 
-    // 2. Update associated StudentProfile phone/location if applicable
+    // 2. Update User phone if provided
+    if (phone) {
+      user.phone = phone;
+    }
+
+    await user.save({ transaction: t });
+
+    // 3. Update associated StudentProfile phone/location if applicable
     if (user.role === 'Student') {
       const profile = await StudentProfile.findOne({ where: { userId: req.user.id } });
       if (profile) {
@@ -40,7 +47,7 @@ exports.updateUserSettings = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Profile settings updated successfully',
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone }
     });
   } catch (error) {
     await t.rollback();

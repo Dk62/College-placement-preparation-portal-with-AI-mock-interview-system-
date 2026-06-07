@@ -28,8 +28,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        axios.defaults.withCredentials = true;
-        const res = await axios.get('http://localhost:5000/api/admin/stats');
+        const res = await axios.get('/api/admin/stats');
         setStats(res.data.data);
       } catch (err) {
         console.error('Stats fetch err', err);

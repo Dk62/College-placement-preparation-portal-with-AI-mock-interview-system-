@@ -21,7 +21,7 @@ const Login = () => {
 
   useEffect(() => {
     if (isError) {
-      alert(message); // Ideally use a toast notification
+      console.error('❌ Login Error:', message);
     }
 
     if (isSuccess || user) {
@@ -86,6 +86,22 @@ const Login = () => {
           <span className="flex-shrink-0 mx-4 text-gray-400 dark:text-gray-500 text-sm">or sign in with email</span>
           <div className="flex-grow border-t border-gray-300 dark:border-[#2e303a]"></div>
         </div>
+
+        {/* Error Message Display */}
+        {isError && message && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+              {message.includes('Cannot connect to backend') ? (
+                <>
+                  <span className="block font-bold mb-1">⚠️ Backend Connection Error</span>
+                  <span className="block text-xs">Make sure your backend server is running on http://localhost:5000</span>
+                </>
+              ) : (
+                message
+              )}
+            </p>
+          </div>
+        )}
 
         <form onSubmit={onSubmit} className="space-y-6">
           <div>

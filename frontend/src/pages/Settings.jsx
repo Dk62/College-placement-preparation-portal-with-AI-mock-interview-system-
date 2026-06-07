@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Settings as SettingsIcon, Lock, Bell, UserCheck } from 'lucide-react';
+
+const TabButton = ({ id, label, icon: Icon, activeTab, setActiveTab }) => (
+  <button
+    onClick={() => setActiveTab(id)}
+    className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all text-left border-l-4 ${
+      activeTab === id 
+        ? 'bg-blue-50 dark:bg-blue-950/30 text-[#1e3a8a] dark:text-blue-400 border-[#1e3a8a] dark:border-blue-400' 
+        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#16171d]/50 border-transparent'
+    }`}
+  >
+    <Icon size={18} />
+    {label}
+  </button>
+);
 
 const Settings = () => {
   const { user } = useSelector((state) => state.auth);
@@ -31,9 +45,13 @@ const Settings = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      axios.defaults.withCredentials = true;
-      const res = await axios.put('http://localhost:5000/api/users/update-settings', contactForm);
+      const config = {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      };
+      const res = await axios.put('http://localhost:5000/api/users/update-settings', contactForm, config);
       toast.success(res.data.message || 'Settings updated');
+      setContactForm({ ...contactForm, email: res.data.user?.email || contactForm.email });
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update settings');
     } finally {
@@ -52,11 +70,14 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      axios.defaults.withCredentials = true;
+      const config = {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      };
       const res = await axios.put('http://localhost:5000/api/users/change-password', {
         currentPassword: pwdForm.currentPassword,
         newPassword: pwdForm.newPassword
-      });
+      }, config);
       toast.success(res.data.message);
       setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
@@ -65,20 +86,6 @@ const Settings = () => {
       setLoading(false);
     }
   };
-
-  const TabButton = ({ id, label, icon: Icon }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all text-left border-l-4 ${
-        activeTab === id 
-          ? 'bg-blue-50 dark:bg-blue-950/30 text-[#1e3a8a] dark:text-blue-400 border-[#1e3a8a] dark:border-blue-400' 
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#16171d]/50 border-transparent'
-      }`}
-    >
-      <Icon size={18} />
-      {label}
-    </button>
-  );
 
   return (
     <div className="max-w-4xl mx-auto mt-8 mb-12 px-4">
@@ -93,9 +100,9 @@ const Settings = () => {
       <div className="bg-white dark:bg-[#1f2028] rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-gray-100 dark:border-[#2e303a] min-h-[500px]">
         {/* Sidebar Navigation */}
         <div className="md:w-64 bg-gray-50 dark:bg-[#16171d]/30 border-r border-gray-100 dark:border-[#2e303a] py-6 flex flex-col">
-          <TabButton id="profile" label="Profile Sync" icon={UserCheck} />
-          <TabButton id="password" label="Security & Password" icon={Lock} />
-          <TabButton id="notifications" label="Preferences" icon={Bell} />
+          <TabButton id="profile" label="Profile Sync" icon={UserCheck} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <TabButton id="password" label="Security & Password" icon={Lock} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <TabButton id="notifications" label="Preferences" icon={Bell} activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
         {/* Content Render Panel */}

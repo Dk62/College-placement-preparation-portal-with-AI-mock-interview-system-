@@ -7,21 +7,19 @@ import './index.css'
 import axios from 'axios';
 import App from './App.jsx';
 
-// Standardized Axios Deployment Pipeline
+// Global axios config
 axios.defaults.withCredentials = true;
-axios.interceptors.request.use((config) => {
-  // Dynamically inject cloud API route if provided by Hosting Providers
-  let cloudApi = import.meta.env.VITE_API_URL;
-  if (cloudApi && config.url && config.url.includes('http://localhost:5000')) {
-    // Sanitize user inputs: remove trailing slashes and ensure https:// protocol
-    cloudApi = cloudApi.replace(/\/$/, '');
-    if (!cloudApi.startsWith('http')) {
-      cloudApi = `https://${cloudApi}`;
-    }
-    config.url = config.url.replace('http://localhost:5000', cloudApi);
-  }
-  return config;
-}, (error) => Promise.reject(error));
+
+// 🚀 PRODUCTION only: If frontend and backend are on different domains (e.g., Vercel + Railway),
+// set VITE_API_URL in your hosting provider's env vars to override the base URL.
+const productionApi = import.meta.env.VITE_API_URL;
+if (productionApi) {
+  // Sanitize: remove trailing slashes, ensure https:// protocol
+  const cleanApi = productionApi.replace(/\/$/, '').startsWith('http')
+    ? productionApi.replace(/\/$/, '')
+    : `https://${productionApi.replace(/\/$/, '')}`;
+  axios.defaults.baseURL = cleanApi;
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

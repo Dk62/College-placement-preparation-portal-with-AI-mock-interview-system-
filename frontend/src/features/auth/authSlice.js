@@ -1,9 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// API Configuration
-const API_URL = 'http://localhost:5000/api/auth/';
-axios.defaults.withCredentials = true;
+// API Configuration — relative path works with Vite proxy (local) and same-domain in production
+const API_URL = '/api/auth/';
 
 // Retrieve user from local storage
 const user = JSON.parse(localStorage.getItem('user'));
@@ -25,7 +24,24 @@ export const login = createAsyncThunk('auth/login', async (userData, thunkAPI) =
       return response.data.user;
     }
   } catch (error) {
-    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    let message = error.message;
+    
+    if (!error.response) {
+      // Network error - backend not reachable
+      message = 'Network Error: Cannot connect to backend server at http://localhost:5000. Make sure backend is running!';
+      console.error('🔴 Network Error Details:', {
+        message: error.message,
+        code: error.code,
+        url: API_URL + 'login'
+      });
+    } else if (error.response?.status === 401) {
+      message = error.response.data?.message || 'Invalid email or password';
+    } else if (error.response?.status === 400) {
+      message = error.response.data?.message || 'Please provide email and password';
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message;
+    }
+    
     return thunkAPI.rejectWithValue(message);
   }
 });
@@ -45,9 +61,17 @@ export const register = createAsyncThunk('auth/register', async (userData, thunk
 });
 
 // Logout user
-export const logout = createAsyncThunk('auth/logout', async () => {
-  await axios.post(API_URL + 'logout');
-  localStorage.removeItem('user');
+export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
+  try {
+    await axios.post(API_URL + 'logout');
+    localStorage.removeItem('user');
+    return { success: true };
+  } catch (error) {
+    // Even if logout API fails, we still want to clear local state
+    localStorage.removeItem('user');
+    const message = (error.response && error.response.data && error.response.data.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
 });
 
 // Google Login

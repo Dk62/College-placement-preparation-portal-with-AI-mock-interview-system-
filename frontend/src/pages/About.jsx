@@ -1,5 +1,7 @@
-import React from 'react';
+
 import { Target, Award, Cpu } from 'lucide-react';
+
+
 
 const About = () => {
   return (

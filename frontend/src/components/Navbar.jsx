@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout, reset } from '../features/auth/authSlice';
@@ -24,14 +24,25 @@ const Navbar = () => {
     }
   }, [dispatch, user]);
 
-  const onLogout = () => {
-    dispatch(logout());
-    dispatch(reset());
-    setIsProfileDropdownOpen(false);
-    setIsExploreDropdownOpen(false);
-    setIsNotificationsOpen(false);
-    setIsMobileMenuOpen(false);
-    navigate('/login');
+  const onLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      dispatch(reset());
+      setIsProfileDropdownOpen(false);
+      setIsExploreDropdownOpen(false);
+      setIsNotificationsOpen(false);
+      setIsMobileMenuOpen(false);
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout even if API fails
+      dispatch(reset());
+      setIsProfileDropdownOpen(false);
+      setIsExploreDropdownOpen(false);
+      setIsNotificationsOpen(false);
+      setIsMobileMenuOpen(false);
+      navigate('/login', { replace: true });
+    }
   };
 
   const handleMarkRead = () => {

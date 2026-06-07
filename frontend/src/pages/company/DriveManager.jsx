@@ -23,7 +23,7 @@ const DriveManager = () => {
         const pRes = await axios.get('http://localhost:5000/api/company/profile');
         setVerified(pRes.data.data?.is_verified || false);
         fetchDrives();
-      } catch (e) {}
+      } catch (e) { }
     };
     fetchInfo();
   }, []);
@@ -46,12 +46,12 @@ const DriveManager = () => {
           <p className="text-slate-500 text-sm">Control active hiring flows and monitor active directives.</p>
         </div>
         {verified ? (
-          <button onClick={()=>setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all">
+          <button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all">
             <Plus size={18} /> Spawn Launch Sequence
           </button>
         ) : (
           <div className="flex items-center gap-2 text-amber-600 font-bold text-sm bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
-            <Lock size={16} /> Verification Blockade
+            <Lock size={16} /> Verification blocked
           </div>
         )}
       </div>
@@ -62,14 +62,14 @@ const DriveManager = () => {
           <div key={d.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
             <div className="absolute top-0 left-0 h-1 bg-blue-600 w-full"></div>
             <h3 className="text-lg font-black text-slate-900 leading-tight mb-1">{d.job_role}</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase mb-4 flex items-center gap-1"><Calendar size={12}/> {new Date(d.drive_date).toLocaleDateString()}</p>
-            
+            <p className="text-xs text-slate-400 font-bold uppercase mb-4 flex items-center gap-1"><Calendar size={12} /> {new Date(d.drive_date).toLocaleDateString()}</p>
+
             <div className="space-y-2 border-t border-slate-50 pt-4 mb-4">
               <div className="flex justify-between text-xs"><span className="text-slate-500">LPA Target:</span> <span className="font-bold text-slate-800">₹{d.package_lpa} L</span></div>
               <div className="flex justify-between text-xs"><span className="text-slate-500">CGPA Threshold:</span> <span className="font-bold text-slate-800">{d.eligibility_cgpa}</span></div>
               <div className="flex justify-between text-xs"><span className="text-slate-500">Target Area:</span> <span className="font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{d.eligibility_branch}</span></div>
             </div>
-            
+
             <div className="flex items-center gap-2 mt-auto">
               <span className="text-[10px] font-black px-2 py-1 bg-green-50 text-green-700 rounded-full uppercase border border-green-100">Live Pipeline</span>
             </div>
@@ -81,41 +81,41 @@ const DriveManager = () => {
       {open && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2"><UserCheck className="text-blue-600"/> Establish Drive Profile</h2>
+            <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2"><UserCheck className="text-blue-600" /> Establish Drive Profile</h2>
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-black text-slate-500 uppercase mb-1.5">Operational Title (Role)</label>
-                <input required className="w-full p-2.5 border rounded-xl" value={form.job_role} onChange={(e)=>setForm({...form, job_role:e.target.value})}/>
+                <input required className="w-full p-2.5 border rounded-xl focus:ring-blue-500 focus:ring-2 text-slate-700 font-medium" value={form.job_role} onChange={(e) => setForm({ ...form, job_role: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase mb-1.5">Package (LPA)</label>
-                  <input required type="number" step="0.1" className="w-full p-2.5 border rounded-xl" value={form.package_lpa} onChange={(e)=>setForm({...form, package_lpa:e.target.value})}/>
+                  <input required type="number" step="0.1" className="w-full p-2.5 border rounded-xl focus:ring-blue-500 focus:ring-2 text-slate-700 font-medium" value={form.package_lpa} onChange={(e) => setForm({ ...form, package_lpa: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase mb-1.5">Launch Schedule</label>
-                  <input required type="date" className="w-full p-2.5 border rounded-xl" value={form.drive_date} onChange={(e)=>setForm({...form, drive_date:e.target.value})}/>
+                  <input required type="date" className="w-full p-2.5 border rounded-xl focus:ring-blue-500 focus:ring-2 text-slate-700 font-medium" value={form.drive_date} onChange={(e) => setForm({ ...form, drive_date: e.target.value })} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase mb-1.5">Min CGPA</label>
-                  <input required type="number" step="0.1" className="w-full p-2.5 border rounded-xl" value={form.eligibility_cgpa} onChange={(e)=>setForm({...form, eligibility_cgpa:e.target.value})}/>
+                  <input required type="number" step="0.1" className="w-full p-2.5 border rounded-xl focus:ring-blue-500 focus:ring-2 text-slate-700 font-medium" value={form.eligibility_cgpa} onChange={(e) => setForm({ ...form, eligibility_cgpa: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase mb-1.5">Eligibility Array</label>
-                  <select className="w-full p-2.5 border rounded-xl" value={form.eligibility_branch} onChange={(e)=>setForm({...form, eligibility_branch:e.target.value})}>
+                  <select className="w-full p-2.5 border rounded-xl focus:ring-blue-500 focus:ring-2 text-slate-700 font-medium" value={form.eligibility_branch} onChange={(e) => setForm({ ...form, eligibility_branch: e.target.value })}>
                     <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="ALL">Composite</option>
                   </select>
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-black text-slate-500 uppercase mb-1.5">Requirement Brief</label>
-                <textarea required className="w-full p-2.5 border rounded-xl h-20" value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})}/>
+                <textarea required className="w-full p-2.5 border rounded-xl focus:ring-blue-500 focus:ring-2 h-20 text-slate-700 font-medium" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
               </div>
-              
+
               <div className="flex gap-3 pt-4 border-t mt-4">
-                <button type="button" onClick={()=>setOpen(false)} className="flex-1 py-3 font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">Abort</button>
+                <button type="button" onClick={() => setOpen(false)} className="flex-1 py-3 font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">Abort</button>
                 <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-600/20 transition-all">Initialize Directive</button>
               </div>
             </form>

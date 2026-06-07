@@ -12,8 +12,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      axios.defaults.withCredentials = true;
-      const res = await axios.get(`http://localhost:5000/api/admin/users?search=${search}&role=${role}`);
+      const res = await axios.get(`/api/admin/users?search=${search}&role=${role}`);
       setUsers(res.data.data);
     } catch (err) {
       toast.error('Failed to load directory');
@@ -30,7 +29,7 @@ const UserManagement = () => {
   const handleDelete = async (id, email) => {
     if (!window.confirm(`CRITICAL WARNING: Proceed to permanently purge the node for ${email}?`)) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${id}`);
+      await axios.delete(`/api/admin/users/${id}`);
       toast.success('User purged from main server cluster');
       fetchUsers();
     } catch (e) {
