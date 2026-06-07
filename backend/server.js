@@ -64,10 +64,16 @@ const init = async () => {
   try {
     // 1. Create Database if it doesn't exist
     console.log('🔍 Attempting to connect to database...');
-    console.log(`   Host: ${process.env.DB_HOST || process.env.MYSQLHOST}`);
-    console.log(`   Port: ${process.env.DB_PORT || process.env.MYSQLPORT || 3306}`);
-    console.log(`   User: ${process.env.DB_USER || process.env.MYSQLUSER}`);
-    console.log(`   Database: ${process.env.DB_NAME || process.env.MYSQLDATABASE}`);
+   console.log("DB_HOST:", process.env.DB_HOST);
+   console.log("MYSQLHOST:", process.env.MYSQLHOST);
+   console.log("DB_PORT:", process.env.DB_PORT);
+   console.log("MYSQLPORT:", process.env.MYSQLPORT);
+   console.log("DB_USER:", process.env.DB_USER);
+   console.log("MYSQLUSER:", process.env.MYSQLUSER);
+    console.log("DB_PASSWORD:", process.env.DB_PASSWORD ? '******' : undefined);
+    console.log("MYSQLPASSWORD:", process.env.MYSQLPASSWORD ? '******' : undefined);
+   console.log("DB_NAME:", process.env.DB_NAME);
+    console.log("MYSQLDATABASE:", process.env.MYSQLDATABASE);
 
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST || process.env.MYSQLHOST,
@@ -109,7 +115,8 @@ const init = async () => {
       console.log('\n✨ Ready to accept requests!\n');
     });
   } catch (error) {
-    console.error('\n❌ Failed to initialize server:', error.message);
+    console.error("Full database connection error:");
+    console.error(error);
     if (error.code === 'ENOTFOUND') {
       console.error('   └─ Database host not found. Check your DB_HOST in .env');
     } else if (error.code === 'ECONNREFUSED') {
