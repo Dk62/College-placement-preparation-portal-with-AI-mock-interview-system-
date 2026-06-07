@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
-const mysql = require('mysql2/promise');
 
 dotenv.config();
 
@@ -59,50 +58,52 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+// ─── Detect environment ───────────────────────────────────────────────────────
+const isRailwayUnresolved = (val) => !val || val.includes('${{');
+const MYSQL_URL = process.env.MYSQL_URL;
+const isProduction = MYSQL_URL && !isRailwayUnresolved(MYSQL_URL);
+
 // Initialize Database and Server
 const init = async () => {
   try {
-    // 1. Create Database if it doesn't exist
-    console.log('🔍 Attempting to connect to database...');
-   console.log("DB_HOST:", process.env.DB_HOST);
-   console.log("MYSQLHOST:", process.env.MYSQLHOST);
-   console.log("DB_PORT:", process.env.DB_PORT);
-   console.log("MYSQLPORT:", process.env.MYSQLPORT);
-   console.log("DB_USER:", process.env.DB_USER);
-   console.log("MYSQLUSER:", process.env.MYSQLUSER);
-    console.log("DB_PASSWORD:", process.env.DB_PASSWORD ? '******' : undefined);
-    console.log("MYSQLPASSWORD:", process.env.MYSQLPASSWORD ? '******' : undefined);
-   console.log("DB_NAME:", process.env.DB_NAME);
-    console.log("MYSQLDATABASE:", process.env.MYSQLDATABASE);
+    if (isProduction) {
+      // ── PRODUCTION (Railway) ──────────────────────────────────────────────
+      // Railway manages the DB — no need to CREATE DATABASE manually.
+      // Just connect via Sequelize using MYSQL_URL.
+      console.log('🚀 Production mode detected (Railway)');
+      console.log('🔍 Connecting to Railway MySQL via MYSQL_URL...');
+    } else {
+      // ── LOCAL DEVELOPMENT ─────────────────────────────────────────────────
+      const { DB_HOST, DB_PORT, DB_USER, DB_NAME } = process.env;
+      console.log('💻 Local development mode');
+      console.log(`🔍 Connecting to local MySQL at ${DB_HOST}:${DB_PORT || 3306}...`);
 
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST || process.env.MYSQLHOST,
-      port: process.env.DB_PORT || process.env.MYSQLPORT || 3306,
-      user: process.env.DB_USER || process.env.MYSQLUSER,
-      password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
-    });
-    
-    console.log('✅ Connected to MySQL server');
-    
-    // Database dropping is removed for persistent storage
-    const targetDbName = process.env.DB_NAME || process.env.MYSQLDATABASE;
-    try {
-      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDbName}\`;`);
-      console.log(`✅ Database ${targetDbName} ensured.`);
-    } catch (dbError) {
-      console.log(`⚠️  Skipping DB creation (Managed Cloud Database detected or access restricted).`);
+      // Create the local database if it doesn't exist
+      const mysql = require('mysql2/promise');
+      const connection = await mysql.createConnection({
+        host: DB_HOST || 'localhost',
+        port: parseInt(DB_PORT) || 3306,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+      });
+      console.log('✅ Connected to local MySQL server');
+      const targetDb = DB_NAME || 'placement_portal';
+      try {
+        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDb}\`;`);
+        console.log(`✅ Database "${targetDb}" ensured.`);
+      } catch {
+        console.log('⚠️  Skipping DB creation (access restricted).');
+      }
+      await connection.end();
     }
-    await connection.end();
 
     // 2. Connect Sequelize and Sync Models
-    console.log('🔍 Connecting to Sequelize...');
+    console.log('🔍 Connecting via Sequelize...');
     const { sequelize } = require('./models');
     await sequelize.authenticate();
     console.log('✅ Sequelize database connected successfully.');
-    
-    // Sync models — use { alter: false } to avoid MySQL's 64-key-per-table limit.
-    // On first run or after adding new columns, temporarily set alter: true, then revert.
-    // NEVER use { force: true } in production — it drops all tables!
+
+    // Sync models — alter:false avoids MySQL's 64-key-per-table limit.
     console.log('🔍 Syncing database models...');
     await sequelize.sync({ alter: false });
     console.log('✅ Database synced.');
@@ -110,19 +111,21 @@ const init = async () => {
     // 3. Start Server
     app.listen(PORT, () => {
       console.log(`\n✅ Server is running on port ${PORT}`);
-      console.log(`📍 Frontend should connect to: http://localhost:${PORT}/api/auth/login`);
-      console.log(`🌐 CORS enabled for: http://localhost:5173`);
+      console.log(`🌐 Mode: ${isProduction ? 'PRODUCTION (Railway)' : 'LOCAL DEV'}`);
       console.log('\n✨ Ready to accept requests!\n');
     });
   } catch (error) {
-    console.error("Full database connection error:");
-    console.error(error);
-    if (error.code === 'ENOTFOUND') {
-      console.error('   └─ Database host not found. Check your DB_HOST in .env');
+    console.error('\n❌ Failed to initialize server:', error.message);
+    console.error('Error code:', error.code);
+    if (error.code === 'ETIMEDOUT') {
+      console.error('   └─ Connection timed out. Check MYSQL_URL on Railway dashboard.');
+      console.error('   └─ Ensure MySQL service is linked to this Railway service.');
+    } else if (error.code === 'ENOTFOUND') {
+      console.error('   └─ Database host not found. Check DB_HOST / MYSQL_URL.');
     } else if (error.code === 'ECONNREFUSED') {
-      console.error('   └─ Connection refused. Is MySQL running on the specified host:port?');
+      console.error('   └─ Connection refused. Is MySQL running?');
     } else if (error.code === 'ER_ACCESS_DENIED_FOR_USER') {
-      console.error('   └─ Access denied. Check DB_USER and DB_PASSWORD in .env');
+      console.error('   └─ Access denied. Check DB credentials.');
     }
     process.exit(1);
   }
