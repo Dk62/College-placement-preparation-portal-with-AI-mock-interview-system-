@@ -11,26 +11,37 @@ dotenv.config();
 
 const isRailwayUnresolved = (val) => !val || val.includes('${{');
 
-const MYSQL_URL = process.env.MYSQL_URL;
-const hasValidMysqlUrl = MYSQL_URL && !isRailwayUnresolved(MYSQL_URL);
+// Railway injects both MYSQL_URL (private network) and MYSQL_PUBLIC_URL (TCP proxy).
+// We prefer MYSQL_PUBLIC_URL — it uses the Railway TCP proxy and is always reachable.
+// MYSQL_URL uses the internal private domain which can sometimes have routing delays.
+const MYSQL_PUBLIC_URL = process.env.MYSQL_PUBLIC_URL;
+const MYSQL_URL        = process.env.MYSQL_URL;
+
+const resolvedUrl =
+  (MYSQL_PUBLIC_URL && !isRailwayUnresolved(MYSQL_PUBLIC_URL)) ? MYSQL_PUBLIC_URL :
+  (MYSQL_URL        && !isRailwayUnresolved(MYSQL_URL))        ? MYSQL_URL        :
+  null;
+
+const hasValidMysqlUrl = !!resolvedUrl;
 
 let sequelize;
 
 if (hasValidMysqlUrl) {
   // ── Production (Railway): use full connection string ──────────────────────
-  console.log('🚀 Using MYSQL_URL connection string (Railway Production)');
-  sequelize = new Sequelize(MYSQL_URL, {
+  // Railway's MySQL runs on a private internal network — NO SSL needed.
+  const urlType = resolvedUrl === MYSQL_PUBLIC_URL ? 'MYSQL_PUBLIC_URL (TCP Proxy)' : 'MYSQL_URL (Private Network)';
+  console.log(`🚀 Production mode: connecting via ${urlType}`);
+
+  sequelize = new Sequelize(resolvedUrl, {
     dialect: 'mysql',
     dialectOptions: {
-      ssl: {
-        rejectUnauthorized: false  // Required for Railway managed MySQL
-      },
-      connectTimeout: 30000,
+      // NO ssl — Railway internal MySQL is plain TCP, not SSL.
+      connectTimeout: 60000,
     },
     pool: {
       max: 10,
       min: 0,
-      acquire: 30000,
+      acquire: 60000,
       idle: 10000,
     },
     logging: false,
