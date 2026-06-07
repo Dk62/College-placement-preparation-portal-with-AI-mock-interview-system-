@@ -58,77 +58,78 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-// ─── Detect environment ───────────────────────────────────────────────────────
-const isRailwayUnresolved = (val) => !val || val.includes('${{');
-const MYSQL_URL = process.env.MYSQL_URL;
-const isProduction = MYSQL_URL && !isRailwayUnresolved(MYSQL_URL);
+// ─── Environment detection ────────────────────────────────────────────────────
+// Use MYSQLHOST — Railway always resolves this properly for linked MySQL services.
+const isUnresolved  = (val) => !val || String(val).includes('${{');
+const isProduction  = !isUnresolved(process.env.MYSQLHOST);
 
 // Initialize Database and Server
 const init = async () => {
   try {
     if (isProduction) {
-      // ── PRODUCTION (Railway) ──────────────────────────────────────────────
-      // Railway manages the DB — no need to CREATE DATABASE manually.
-      // Just connect via Sequelize using MYSQL_URL.
-      console.log('🚀 Production mode detected (Railway)');
-      console.log('🔍 Connecting to Railway MySQL via MYSQL_URL...');
+      console.log('🚀 Production mode (Railway) — skipping manual DB creation.');
     } else {
-      // ── LOCAL DEVELOPMENT ─────────────────────────────────────────────────
-      const { DB_HOST, DB_PORT, DB_USER, DB_NAME } = process.env;
-      console.log('💻 Local development mode');
-      console.log(`🔍 Connecting to local MySQL at ${DB_HOST}:${DB_PORT || 3306}...`);
-
-      // Create the local database if it doesn't exist
+      // ── LOCAL: create database if missing ──────────────────────────────────
+      const { DB_HOST = 'localhost', DB_PORT = '3306', DB_USER = 'root', DB_PASSWORD = '', DB_NAME = 'placement_portal' } = process.env;
+      console.log(`💻 Local dev — ensuring database "${DB_NAME}" exists...`);
       const mysql = require('mysql2/promise');
-      const connection = await mysql.createConnection({
-        host: DB_HOST || 'localhost',
-        port: parseInt(DB_PORT) || 3306,
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-      });
-      console.log('✅ Connected to local MySQL server');
-      const targetDb = DB_NAME || 'placement_portal';
+      const conn  = await mysql.createConnection({ host: DB_HOST, port: parseInt(DB_PORT), user: DB_USER, password: DB_PASSWORD });
       try {
-        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${targetDb}\`;`);
-        console.log(`✅ Database "${targetDb}" ensured.`);
+        await conn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
+        console.log(`✅ Database "${DB_NAME}" ensured.`);
       } catch {
         console.log('⚠️  Skipping DB creation (access restricted).');
       }
-      await connection.end();
+      await conn.end();
     }
 
-    // 2. Connect Sequelize and Sync Models
+    // ── Connect via Sequelize ─────────────────────────────────────────────────
     console.log('🔍 Connecting via Sequelize...');
     const { sequelize } = require('./models');
     await sequelize.authenticate();
-    console.log('✅ Sequelize database connected successfully.');
+    console.log('✅ Sequelize connected successfully.');
 
-    // Sync models — alter:false avoids MySQL's 64-key-per-table limit.
-    console.log('🔍 Syncing database models...');
-    await sequelize.sync({ alter: false });
-    console.log('✅ Database synced.');
-
-    // 3. Start Server
-    app.listen(PORT, () => {
-      console.log(`\n✅ Server is running on port ${PORT}`);
-      console.log(`🌐 Mode: ${isProduction ? 'PRODUCTION (Railway)' : 'LOCAL DEV'}`);
-      console.log('\n✨ Ready to accept requests!\n');
-    });
-  } catch (error) {
-    console.error('\n❌ Failed to initialize server:', error.message);
-    console.error('Error code:', error.code);
-    if (error.code === 'ETIMEDOUT') {
-      console.error('   └─ Connection timed out. Check MYSQL_URL on Railway dashboard.');
-      console.error('   └─ Ensure MySQL service is linked to this Railway service.');
-    } else if (error.code === 'ENOTFOUND') {
-      console.error('   └─ Database host not found. Check DB_HOST / MYSQL_URL.');
-    } else if (error.code === 'ECONNREFUSED') {
-      console.error('   └─ Connection refused. Is MySQL running?');
-    } else if (error.code === 'ER_ACCESS_DENIED_FOR_USER') {
-      console.error('   └─ Access denied. Check DB credentials.');
+    // ── Sync models ───────────────────────────────────────────────────────────
+    // In production: sync is non-fatal — tables persist between deploys.
+    // In local dev: sync is required to create the schema on first run.
+    if (isProduction) {
+      try {
+        console.log('🔍 Syncing models (production — non-fatal)...');
+        await sequelize.sync({ alter: false });
+        console.log('✅ Models synced.');
+      } catch (syncErr) {
+        // Warn but don't crash — existing tables are fine, the server can still serve requests.
+        console.warn('⚠️  Model sync warning (non-fatal):', syncErr.message);
+        console.warn('   Tables may already exist — continuing startup.');
+      }
+    } else {
+      console.log('🔍 Syncing models (local dev)...');
+      await sequelize.sync({ alter: false });
+      console.log('✅ Models synced.');
     }
+
+    // ── Start HTTP server ─────────────────────────────────────────────────────
+    app.listen(PORT, () => {
+      console.log(`\n✅ Server running on port ${PORT}`);
+      console.log(`🌐 Mode: ${isProduction ? 'PRODUCTION (Railway)' : 'LOCAL DEV'}`);
+      console.log('✨ Ready!\n');
+    });
+
+  } catch (error) {
+    console.error('\n❌ Server startup failed:', error.message);
+    console.error('   Error code   :', error.code || 'N/A');
+    console.error('   Error name   :', error.name || 'N/A');
+    // Log full error for "Connection lost" which has no .code
+    if (!error.code) console.error('   Full error:', error);
+
+    if (error.code === 'ETIMEDOUT')               console.error('   └─ DB host unreachable. Check MYSQLHOST is linked in Railway dashboard.');
+    else if (error.code === 'ENOTFOUND')          console.error('   └─ DB hostname not found.');
+    else if (error.code === 'ECONNREFUSED')       console.error('   └─ DB refused connection. Is MySQL running?');
+    else if (error.code === 'ER_ACCESS_DENIED_FOR_USER') console.error('   └─ Access denied. Check MYSQLUSER / MYSQLPASSWORD.');
+
     process.exit(1);
   }
 };
 
 init();
+

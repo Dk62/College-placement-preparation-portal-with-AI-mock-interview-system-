@@ -3,65 +3,95 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// ─── Railway Production vs Local Dev Detection ────────────────────────────────
-// Railway automatically injects MYSQL_URL as a full connection string.
-// On local dev, we use individual DB_* vars from .env.
-// We also guard against Railway's ${{...}} template strings being read literally
-// (this happens when the .env file is deployed to Railway directly).
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const isUnresolved = (val) => !val || String(val).includes('${{');
 
-const isRailwayUnresolved = (val) => !val || val.includes('${{');
+// ─── Pick connection strategy ─────────────────────────────────────────────────
+// Railway injects individual MYSQL* vars AND a MYSQL_URL string.
+// Individual vars (MYSQLHOST, MYSQLPORT, etc.) are MORE reliable than the URL
+// because the URL goes through a TCP proxy that can drop long-running connections.
+//
+// Priority:
+//   1. Individual Railway MYSQL* vars   → most stable on Railway private network
+//   2. MYSQL_URL connection string       → fallback if individual vars not set
+//   3. Local DB_* vars                  → local development only
 
-// Railway injects both MYSQL_URL (private network) and MYSQL_PUBLIC_URL (TCP proxy).
-// We prefer MYSQL_PUBLIC_URL — it uses the Railway TCP proxy and is always reachable.
-// MYSQL_URL uses the internal private domain which can sometimes have routing delays.
-const MYSQL_PUBLIC_URL = process.env.MYSQL_PUBLIC_URL;
-const MYSQL_URL        = process.env.MYSQL_URL;
+const MYSQLHOST     = process.env.MYSQLHOST;
+const MYSQLPORT     = process.env.MYSQLPORT;
+const MYSQLUSER     = process.env.MYSQLUSER;
+const MYSQLPASSWORD = process.env.MYSQLPASSWORD;
+const MYSQLDATABASE = process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE;
+const MYSQL_URL     = process.env.MYSQL_URL;
 
-const resolvedUrl =
-  (MYSQL_PUBLIC_URL && !isRailwayUnresolved(MYSQL_PUBLIC_URL)) ? MYSQL_PUBLIC_URL :
-  (MYSQL_URL        && !isRailwayUnresolved(MYSQL_URL))        ? MYSQL_URL        :
-  null;
+const hasIndividualVars =
+  !isUnresolved(MYSQLHOST) &&
+  !isUnresolved(MYSQLUSER) &&
+  !isUnresolved(MYSQLPASSWORD) &&
+  !isUnresolved(MYSQLDATABASE);
 
-const hasValidMysqlUrl = !!resolvedUrl;
+const hasUrlConnection = MYSQL_URL && !isUnresolved(MYSQL_URL);
 
 let sequelize;
 
-if (hasValidMysqlUrl) {
-  // ── Production (Railway): use full connection string ──────────────────────
-  // Railway's MySQL runs on a private internal network — NO SSL needed.
-  const urlType = resolvedUrl === MYSQL_PUBLIC_URL ? 'MYSQL_PUBLIC_URL (TCP Proxy)' : 'MYSQL_URL (Private Network)';
-  console.log(`🚀 Production mode: connecting via ${urlType}`);
+if (hasIndividualVars) {
+  // ── Strategy 1: Railway individual vars (most reliable) ───────────────────
+  const host = MYSQLHOST;
+  const port = parseInt(MYSQLPORT) || 3306;
+  const user = MYSQLUSER;
+  const pass = MYSQLPASSWORD;
+  const db   = MYSQLDATABASE;
 
-  sequelize = new Sequelize(resolvedUrl, {
+  console.log(`🚀 Railway Production: ${user}@${host}:${port}/${db}`);
+
+  sequelize = new Sequelize(db, user, pass, {
+    host,
+    port,
     dialect: 'mysql',
     dialectOptions: {
-      // NO ssl — Railway internal MySQL is plain TCP, not SSL.
       connectTimeout: 60000,
+      // keepAlive prevents "Connection lost" during long sync operations
+      keepAlive: true,
     },
     pool: {
-      max: 10,
-      min: 0,
+      max: 5,
+      min: 1,
       acquire: 60000,
-      idle: 10000,
+      idle:    20000,
+      evict:   30000,
     },
     logging: false,
   });
+
+} else if (hasUrlConnection) {
+  // ── Strategy 2: MYSQL_URL connection string ────────────────────────────────
+  console.log('🚀 Railway Production: connecting via MYSQL_URL');
+
+  sequelize = new Sequelize(MYSQL_URL, {
+    dialect: 'mysql',
+    dialectOptions: {
+      connectTimeout: 60000,
+      keepAlive:      true,
+    },
+    pool: {
+      max: 5,
+      min: 1,
+      acquire: 60000,
+      idle:    20000,
+    },
+    logging: false,
+  });
+
 } else {
-  // ── Local Development: use individual DB_* variables ─────────────────────
-  const dbHost     = process.env.DB_HOST || 'localhost';
-  const dbUser     = process.env.DB_USER || 'root';
-  const dbPassword = process.env.DB_PASSWORD || '';
-  const dbName     = process.env.DB_NAME || 'placement_portal';
-  const dbPort     = parseInt(process.env.DB_PORT) || 3306;
+  // ── Strategy 3: Local development ─────────────────────────────────────────
+  const dbHost = process.env.DB_HOST || 'localhost';
+  const dbUser = process.env.DB_USER || 'root';
+  const dbPass = process.env.DB_PASSWORD || '';
+  const dbName = process.env.DB_NAME || 'placement_portal';
+  const dbPort = parseInt(process.env.DB_PORT) || 3306;
 
-  console.log(`💻 Using local DB: ${dbUser}@${dbHost}:${dbPort}/${dbName}`);
+  console.log(`💻 Local Dev: ${dbUser}@${dbHost}:${dbPort}/${dbName}`);
 
-  if (!dbHost || !dbUser || !dbName) {
-    console.error('❌ Missing database configuration! Set DB_HOST, DB_USER, DB_NAME in .env');
-    process.exit(1);
-  }
-
-  sequelize = new Sequelize(dbName, dbUser, dbPassword, {
+  sequelize = new Sequelize(dbName, dbUser, dbPass, {
     host: dbHost,
     port: dbPort,
     dialect: 'mysql',
@@ -70,4 +100,3 @@ if (hasValidMysqlUrl) {
 }
 
 module.exports = sequelize;
-
