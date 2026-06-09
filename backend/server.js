@@ -74,9 +74,14 @@ app.get('/api/health', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 // ─── Environment detection ────────────────────────────────────────────────────
-// Use MYSQLHOST — Railway always resolves this properly for linked MySQL services.
+// Use URL-based detection — MYSQL_PUBLIC_URL (TCP proxy) or MYSQL_URL (private).
+// Avoid MYSQLHOST — it points to mysql.railway.internal which causes ETIMEDOUT.
 const isUnresolved  = (val) => !val || String(val).includes('${{');
-const isProduction  = !isUnresolved(process.env.MYSQLHOST);
+const MYSQL_PUBLIC_URL = process.env.MYSQL_PUBLIC_URL;
+const MYSQL_URL        = process.env.MYSQL_URL;
+const isProduction  =
+  (MYSQL_PUBLIC_URL && !isUnresolved(MYSQL_PUBLIC_URL)) ||
+  (MYSQL_URL        && !isUnresolved(MYSQL_URL));
 
 // Initialize Database and Server
 const init = async () => {
