@@ -12,7 +12,7 @@ const PlacementDrives = () => {
   useEffect(() => {
     const fetchDrives = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/drives', { withCredentials: true });
+        const response = await axios.get('/api/drives', { withCredentials: true });
         if (response.data.success) {
           setDrives(response.data.data);
         }
@@ -29,7 +29,7 @@ const PlacementDrives = () => {
     setApplyingId(driveId);
     setMessage(null);
     try {
-      const response = await axios.post(`http://localhost:5000/api/drives/${driveId}/apply`, {}, { withCredentials: true });
+      const response = await axios.post(`/api/drives/${driveId}/apply`, {}, { withCredentials: true });
       if (response.data.success) {
         setMessage({ type: 'success', text: 'Successfully applied to the drive!' });
       }

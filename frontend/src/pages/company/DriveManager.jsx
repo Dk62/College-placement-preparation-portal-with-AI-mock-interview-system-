@@ -13,14 +13,14 @@ const DriveManager = () => {
   });
 
   const fetchDrives = async () => {
-    const res = await axios.get('http://localhost:5000/api/company/drives');
+    const res = await axios.get('/api/company/drives');
     setDrives(res.data.data);
   };
 
   useEffect(() => {
     const fetchInfo = async () => {
       try {
-        const pRes = await axios.get('http://localhost:5000/api/company/profile');
+        const pRes = await axios.get('/api/company/profile');
         setVerified(pRes.data.data?.is_verified || false);
         fetchDrives();
       } catch (e) { }
@@ -31,7 +31,7 @@ const DriveManager = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/company/drives', form);
+      await axios.post('/api/company/drives', form);
       toast.success('Deployment protocol successful. Drive live.');
       setOpen(false);
       fetchDrives();

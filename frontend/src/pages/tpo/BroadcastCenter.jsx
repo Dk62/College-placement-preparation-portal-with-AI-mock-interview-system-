@@ -13,7 +13,7 @@ const BroadcastCenter = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/tpo/broadcast', form);
+      const res = await axios.post('/api/tpo/broadcast', form);
       toast.success(res.data.message);
       setForm({ title: '', content: '', targetBranch: 'All', sendMailToggle: true });
     } catch (e) {

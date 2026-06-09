@@ -10,7 +10,7 @@ const CompanyProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/company/profile');
+        const res = await axios.get('/api/company/profile');
         if (res.data.data) {
           const p = res.data.data;
           setForm({ company_name: p.company_name, description: p.description || '', website: p.website || '' });
@@ -24,7 +24,7 @@ const CompanyProfile = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('http://localhost:5000/api/company/profile', form);
+      await axios.put('/api/company/profile', form);
       toast.success('Corporate identification updated successfully.');
     } catch (e) { toast.error('Write process interrupted.'); }
   };

@@ -12,7 +12,7 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         axios.defaults.withCredentials = true;
-        const res = await axios.get('http://localhost:5000/api/profiles/me');
+        const res = await axios.get('/api/profiles/me');
         setProfile(res.data.data);
       } catch (err) {
         console.error('Error loading profile', err);
@@ -25,7 +25,7 @@ const Profile = () => {
 
   const handleDownloadResume = async () => {
     try {
-      window.open('http://localhost:5000/api/profiles/student/resume', '_blank');
+      window.open('/api/profiles/student/resume', '_blank');
     } catch (err) {
       alert('Failed to trigger download');
     }

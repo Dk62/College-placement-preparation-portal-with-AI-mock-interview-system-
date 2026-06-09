@@ -7,7 +7,7 @@ const CompanyApproval = () => {
   const [list, setList] = useState([]);
 
   const fetchList = async () => {
-    const res = await axios.get('http://localhost:5000/api/tpo/companies');
+    const res = await axios.get('/api/tpo/companies');
     setList(res.data.data);
   };
 
@@ -15,7 +15,7 @@ const CompanyApproval = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/tpo/companies/${id}/approve`);
+      await axios.put(`/api/tpo/companies/${id}/approve`);
       toast.success('Company verified. Authorization key active.');
       fetchList();
     } catch (e) { toast.error('Sync failed'); }

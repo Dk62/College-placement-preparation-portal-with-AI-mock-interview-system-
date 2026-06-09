@@ -46,7 +46,7 @@ const ResumeBuilder = () => {
     const fetchProfile = async () => {
       try {
         axios.defaults.withCredentials = true;
-        const res = await axios.get('http://localhost:5000/api/profiles/me');
+        const res = await axios.get('/api/profiles/me');
         if (res.data.success) {
           const profile = res.data.data;
 
@@ -143,7 +143,7 @@ const ResumeBuilder = () => {
     setMessage('');
 
     try {
-      const res = await axios.put('http://localhost:5000/api/profiles/student', formData, {
+      const res = await axios.put('/api/profiles/student', formData, {
         withCredentials: true
       });
       if (res.data.success) {
@@ -158,7 +158,7 @@ const ResumeBuilder = () => {
   };
 
   const handleDownload = () => {
-    window.open('http://localhost:5000/api/profiles/student/resume', '_blank');
+    window.open('/api/profiles/student/resume', '_blank');
   };
 
   return (

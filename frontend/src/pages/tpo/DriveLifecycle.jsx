@@ -13,7 +13,7 @@ const DriveLifecycle = () => {
 
   useEffect(() => {
     const fetchComps = async () => {
-      const res = await axios.get('http://localhost:5000/api/tpo/companies');
+      const res = await axios.get('/api/tpo/companies');
       // only verified companies can form drives
       setCompanies(res.data.data.filter(c => c.is_verified));
     };
@@ -23,7 +23,7 @@ const DriveLifecycle = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/tpo/drives', form);
+      await axios.post('/api/tpo/drives', form);
       toast.success('Operation Synchronized. Live placement drive deployed!');
       setForm({ companyId: '', job_role: '', description: '', eligibility_cgpa: '6.5', eligibility_branch: 'CSE', package_lpa: '', drive_date: '' });
     } catch (err) { toast.error('Deployment aborted due to data-collision.'); }

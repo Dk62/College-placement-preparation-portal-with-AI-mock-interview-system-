@@ -11,7 +11,7 @@ const RecruitmentATS = () => {
 
   useEffect(() => {
     const loadDrives = async () => {
-      const res = await axios.get('http://localhost:5000/api/company/drives');
+      const res = await axios.get('/api/company/drives');
       setDrives(res.data.data);
       if (res.data.data.length > 0) setSelectedDrive(res.data.data[0].id);
     };
@@ -22,7 +22,7 @@ const RecruitmentATS = () => {
     if (!selectedDrive) return;
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/company/drives/${selectedDrive}/applications`);
+      const res = await axios.get(`/api/company/drives/${selectedDrive}/applications`);
       setApps(res.data.data);
     } catch (e) { }
     setLoading(false);
@@ -32,14 +32,14 @@ const RecruitmentATS = () => {
 
   const updateStatus = async (appId, newStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/company/applications/${appId}/status`, { status: newStatus });
+      await axios.put(`/api/company/applications/${appId}/status`, { status: newStatus });
       toast.success(`Candidature mapped to ${newStatus}`);
       fetchApps();
     } catch (e) { toast.error('State write violation'); }
   };
 
   const downloadOffer = (appId) => {
-    window.open(`http://localhost:5000/api/company/applications/${appId}/offer`, '_blank');
+    window.open(`/api/company/applications/${appId}/offer`, '_blank');
   };
 
   return (

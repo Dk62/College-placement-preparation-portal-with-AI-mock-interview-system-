@@ -38,7 +38,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
-app.use(helmet());
+app.use(helmet({
+  // 'same-origin' (helmet default) blocks Google OAuth popup postMessage.
+  // 'same-origin-allow-popups' allows OAuth popup windows to communicate back.
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+}));
 app.use(morgan('dev'));
 
 const authRoutes = require('./routes/authRoutes');

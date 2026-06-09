@@ -49,7 +49,7 @@ const Settings = () => {
         withCredentials: true,
         headers: { 'Content-Type': 'application/json' }
       };
-      const res = await axios.put('http://localhost:5000/api/users/update-settings', contactForm, config);
+      const res = await axios.put('/api/users/update-settings', contactForm, config);
       toast.success(res.data.message || 'Settings updated');
       setContactForm({ ...contactForm, email: res.data.user?.email || contactForm.email });
     } catch (error) {
@@ -74,7 +74,7 @@ const Settings = () => {
         withCredentials: true,
         headers: { 'Content-Type': 'application/json' }
       };
-      const res = await axios.put('http://localhost:5000/api/users/change-password', {
+      const res = await axios.put('/api/users/change-password', {
         currentPassword: pwdForm.currentPassword,
         newPassword: pwdForm.newPassword
       }, config);

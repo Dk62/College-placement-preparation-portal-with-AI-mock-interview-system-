@@ -47,7 +47,7 @@ const ResumeAnalyzer = () => {
 
     try {
       axios.defaults.withCredentials = true;
-      const res = await axios.post('http://localhost:5000/api/profiles/student/analyze-upload', formData, {
+      const res = await axios.post('/api/profiles/student/analyze-upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

@@ -8,14 +8,14 @@ const TPOAnalytics = () => {
 
   useEffect(() => {
     const load = async () => {
-      const res = await axios.get('http://localhost:5000/api/tpo/analytics');
+      const res = await axios.get('/api/tpo/analytics');
       setStats(res.data.data);
     };
     load();
   }, []);
 
   const handleDownload = () => {
-    window.open('http://localhost:5000/api/tpo/export', '_blank');
+    window.open('/api/tpo/export', '_blank');
   };
 
   const chartData = [

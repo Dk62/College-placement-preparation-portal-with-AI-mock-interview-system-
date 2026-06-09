@@ -8,7 +8,7 @@ const StudentTracker = () => {
 
   useEffect(() => {
     const load = async () => {
-      const res = await axios.get('http://localhost:5000/api/tpo/students/readiness');
+      const res = await axios.get('/api/tpo/students/readiness');
       setData(res.data.data);
       setLoading(false);
     };

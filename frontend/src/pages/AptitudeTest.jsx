@@ -32,7 +32,7 @@ const AptitudeTest = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/tests/generate',
+        '/api/tests/generate',
         { domain, count: 5 },
         { withCredentials: true }
       );
@@ -82,7 +82,7 @@ const AptitudeTest = () => {
     // Submit result to backend
     try {
       await axios.post(
-        `http://localhost:5000/api/tests/${testId}/submit`,
+        `/api/tests/${testId}/submit`,
         { 
           score: calculatedScore, 
           accuracy_percentage: (calculatedScore / questions.length) * 100 

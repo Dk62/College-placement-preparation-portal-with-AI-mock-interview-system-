@@ -21,7 +21,7 @@ const StudentDashboard = () => {
     const fetchProfileData = async () => {
       try {
         // Fetch Profile
-        const res = await axios.get('http://localhost:5000/api/profiles/me', { withCredentials: true });
+        const res = await axios.get('/api/profiles/me');
         if (res.data.success) {
           setProfile(res.data.data);
         }
@@ -118,8 +118,8 @@ const StudentDashboard = () => {
           <svg className="w-6 h-6 text-[#1e3a8a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
           Preparation Progress
         </h3>
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-80 w-full overflow-hidden" style={{ minHeight: 320 }}>
+          <ResponsiveContainer width="100%" height={320}>
             <BarChart data={trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
               <XAxis dataKey="name" stroke="#94a3b8" />

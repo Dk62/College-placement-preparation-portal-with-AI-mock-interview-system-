@@ -41,7 +41,7 @@ const MockInterview = () => {
     setIsTyping(true);
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/mock/sessions',
+        '/api/mock/sessions',
         { domain: selectedDomain },
         { withCredentials: true }
       );
@@ -74,7 +74,7 @@ const MockInterview = () => {
     setIsTyping(true);
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/mock/sessions/${sessionId}/responses`,
+        `/api/mock/sessions/${sessionId}/responses`,
         { 
           question: window.currentMockQuestion || 'Initial Question', 
           student_answer: answer 
@@ -140,7 +140,7 @@ const MockInterview = () => {
     
     setIsTyping(true);
     try {
-      await axios.put(`http://localhost:5000/api/mock/sessions/${sessionId}/complete`, {}, { withCredentials: true });
+      await axios.put(`/api/mock/sessions/${sessionId}/complete`, {}, { withCredentials: true });
       navigate('/dashboard');
     } catch (error) {
       console.error('Failed to complete session', error);
