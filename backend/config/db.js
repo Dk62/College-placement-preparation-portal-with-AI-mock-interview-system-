@@ -22,10 +22,10 @@ const isUnresolved = (val) => !val || String(val).includes('${{');
 const MYSQL_PUBLIC_URL = process.env.MYSQL_PUBLIC_URL;
 const MYSQL_URL        = process.env.MYSQL_URL;
 
-// Pick the best available Railway URL
+// Pick the best available Railway URL (prefer internal private network)
 const railwayUrl =
-  (MYSQL_PUBLIC_URL && !isUnresolved(MYSQL_PUBLIC_URL)) ? MYSQL_PUBLIC_URL :
   (MYSQL_URL        && !isUnresolved(MYSQL_URL))        ? MYSQL_URL        :
+  (MYSQL_PUBLIC_URL && !isUnresolved(MYSQL_PUBLIC_URL)) ? MYSQL_PUBLIC_URL :
   null;
 
 const isRailway = !!railwayUrl;
@@ -33,26 +33,26 @@ const isRailway = !!railwayUrl;
 let sequelize;
 
 if (isRailway) {
-  // ── Railway Production (TCP Proxy or Private Network) ─────────────────────
-  const urlType = railwayUrl === MYSQL_PUBLIC_URL
-    ? 'MYSQL_PUBLIC_URL (TCP Proxy ✅ most reliable)'
-    : 'MYSQL_URL (Private Network)';
+  // ── Railway Production (Private Network or TCP Proxy) ─────────────────────
+  const urlType = railwayUrl === MYSQL_URL
+    ? 'MYSQL_URL (Private Network ✅)'
+    : 'MYSQL_PUBLIC_URL (TCP Proxy Fallback)';
 
   console.log(`🚀 Railway Production — using ${urlType}`);
 
   sequelize = new Sequelize(railwayUrl, {
     dialect: 'mysql',
     dialectOptions: {
-      // DO NOT add keepAlive here — it is NOT a valid mysql2 connection option.
-      // It causes a warning and is silently ignored by mysql2.
       connectTimeout: 60000,   // 60s — covers Railway cold starts
+      enableKeepAlive: true,   // Enable TCP keep-alive
+      keepAliveDelay: 10000,   // Check connection health every 10s
     },
     pool: {
       max:     5,
       min:     0,              // Allow pool to drain fully when idle
       acquire: 60000,
-      idle:    10000,
-      evict:   30000,
+      idle:    10000,          // Drop connection if idle for 10s
+      evict:   5000,           // Check for idle connections to evict every 5s
     },
     logging: false,
   });

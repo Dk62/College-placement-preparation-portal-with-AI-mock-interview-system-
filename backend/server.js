@@ -106,10 +106,10 @@ const init = async () => {
   // ── Step 2: Connect via Sequelize with retry logic ────────────────────────
   // PROTOCOL_CONNECTION_LOST / Connection lost on Railway is a cold-start
   // race condition — MySQL container starts slower than the backend.
-  // Retry up to 5 times with exponential backoff before giving up.
+  // Retry up to 10 times with exponential backoff before giving up.
   const { sequelize } = require('./models');
-  const MAX_RETRIES   = 5;
-  const BASE_DELAY_MS = 2000; // 2s → 4s → 8s → 16s → 30s
+  const MAX_RETRIES   = 10;
+  const BASE_DELAY_MS = 3000; // 3s → 6s → 12s → 24s → 30s (capped)
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -120,12 +120,12 @@ const init = async () => {
 
     } catch (connErr) {
       const isLastAttempt = attempt === MAX_RETRIES;
-      const isRetryable   =
-        connErr.message?.includes('Connection lost') ||
-        connErr.message?.includes('PROTOCOL_CONNECTION_LOST') ||
-        connErr.original?.code === 'PROTOCOL_CONNECTION_LOST' ||
-        connErr.original?.code === 'ETIMEDOUT' ||
-        connErr.original?.code === 'ECONNRESET';
+      
+      // Retry on any networking, socket, DNS or connection error. 
+      // Skip retrying only for permanent failures like Access Denied or Bad Database.
+      const isRetryable =
+        connErr.original?.code !== 'ER_ACCESS_DENIED_ERROR' &&
+        connErr.original?.code !== 'ER_BAD_DB_ERROR';
 
       console.error(`❌ Attempt ${attempt} failed: ${connErr.message}`);
 
@@ -135,7 +135,7 @@ const init = async () => {
         console.error('   Error name :', connErr.name);
         console.error('   Error code :', connErr.original?.code || 'N/A');
         if (connErr.original?.code === 'ETIMEDOUT')
-          console.error('   └─ DB host unreachable. Check MYSQL_PUBLIC_URL in Railway dashboard.');
+          console.error('   └─ DB host unreachable. Check private networking or MYSQL_URL.');
         else if (connErr.original?.code === 'ER_ACCESS_DENIED_ERROR')
           console.error('   └─ Access denied. Check MYSQLUSER / MYSQLPASSWORD.');
         else
