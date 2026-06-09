@@ -85,71 +85,99 @@ const isProduction  =
 
 // Initialize Database and Server
 const init = async () => {
-  try {
-    if (isProduction) {
-      console.log('🚀 Production mode (Railway) — skipping manual DB creation.');
-    } else {
-      // ── LOCAL: create database if missing ──────────────────────────────────
-      const { DB_HOST = 'localhost', DB_PORT = '3306', DB_USER = 'root', DB_PASSWORD = '', DB_NAME = 'placement_portal' } = process.env;
-      console.log(`💻 Local dev — ensuring database "${DB_NAME}" exists...`);
+
+  // ── Step 1: Local DB creation (skip in production) ───────────────────────
+  if (isProduction) {
+    console.log('🚀 Production mode (Railway) — skipping manual DB creation.');
+  } else {
+    const { DB_HOST = 'localhost', DB_PORT = '3306', DB_USER = 'root', DB_PASSWORD = '', DB_NAME = 'placement_portal' } = process.env;
+    console.log(`💻 Local dev — ensuring database "${DB_NAME}" exists...`);
+    try {
       const mysql = require('mysql2/promise');
       const conn  = await mysql.createConnection({ host: DB_HOST, port: parseInt(DB_PORT), user: DB_USER, password: DB_PASSWORD });
-      try {
-        await conn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
-        console.log(`✅ Database "${DB_NAME}" ensured.`);
-      } catch {
-        console.log('⚠️  Skipping DB creation (access restricted).');
-      }
+      await conn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
       await conn.end();
+      console.log(`✅ Database "${DB_NAME}" ensured.`);
+    } catch {
+      console.log('⚠️  Skipping DB creation (access restricted).');
     }
+  }
 
-    // ── Connect via Sequelize ─────────────────────────────────────────────────
-    console.log('🔍 Connecting via Sequelize...');
-    const { sequelize } = require('./models');
-    await sequelize.authenticate();
-    console.log('✅ Sequelize connected successfully.');
+  // ── Step 2: Connect via Sequelize with retry logic ────────────────────────
+  // PROTOCOL_CONNECTION_LOST / Connection lost on Railway is a cold-start
+  // race condition — MySQL container starts slower than the backend.
+  // Retry up to 5 times with exponential backoff before giving up.
+  const { sequelize } = require('./models');
+  const MAX_RETRIES   = 5;
+  const BASE_DELAY_MS = 2000; // 2s → 4s → 8s → 16s → 30s
 
-    // ── Sync models ───────────────────────────────────────────────────────────
-    // In production: sync is non-fatal — tables persist between deploys.
-    // In local dev: sync is required to create the schema on first run.
-    if (isProduction) {
-      try {
-        console.log('🔍 Syncing models (production — non-fatal)...');
-        await sequelize.sync({ alter: false });
-        console.log('✅ Models synced.');
-      } catch (syncErr) {
-        // Warn but don't crash — existing tables are fine, the server can still serve requests.
-        console.warn('⚠️  Model sync warning (non-fatal):', syncErr.message);
-        console.warn('   Tables may already exist — continuing startup.');
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`🔍 DB connection attempt ${attempt}/${MAX_RETRIES}...`);
+      await sequelize.authenticate();
+      console.log('✅ Sequelize connected successfully.');
+      break; // Success — exit the retry loop
+
+    } catch (connErr) {
+      const isLastAttempt = attempt === MAX_RETRIES;
+      const isRetryable   =
+        connErr.message?.includes('Connection lost') ||
+        connErr.message?.includes('PROTOCOL_CONNECTION_LOST') ||
+        connErr.original?.code === 'PROTOCOL_CONNECTION_LOST' ||
+        connErr.original?.code === 'ETIMEDOUT' ||
+        connErr.original?.code === 'ECONNRESET';
+
+      console.error(`❌ Attempt ${attempt} failed: ${connErr.message}`);
+
+      if (isLastAttempt || !isRetryable) {
+        // Unrecoverable or out of retries
+        console.error('💥 Could not connect to database after all attempts.');
+        console.error('   Error name :', connErr.name);
+        console.error('   Error code :', connErr.original?.code || 'N/A');
+        if (connErr.original?.code === 'ETIMEDOUT')
+          console.error('   └─ DB host unreachable. Check MYSQL_PUBLIC_URL in Railway dashboard.');
+        else if (connErr.original?.code === 'ER_ACCESS_DENIED_ERROR')
+          console.error('   └─ Access denied. Check MYSQLUSER / MYSQLPASSWORD.');
+        else
+          console.error('   └─ Full error:', connErr.original || connErr);
+        process.exit(1);
       }
-    } else {
-      console.log('🔍 Syncing models (local dev)...');
+
+      // Exponential backoff (capped at 30s)
+      const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt - 1), 30000);
+      console.log(`   ⏳ Retrying in ${delay / 1000}s...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+
+  // ── Step 3: Sync models ───────────────────────────────────────────────────
+  if (isProduction) {
+    try {
+      console.log('🔍 Syncing models (non-fatal in production)...');
       await sequelize.sync({ alter: false });
       console.log('✅ Models synced.');
+    } catch (syncErr) {
+      console.warn('⚠️  Model sync warning (non-fatal):', syncErr.message);
+      console.warn('   Existing tables are intact — server will continue.');
     }
-
-    // ── Start HTTP server ─────────────────────────────────────────────────────
-    app.listen(PORT, () => {
-      console.log(`\n✅ Server running on port ${PORT}`);
-      console.log(`🌐 Mode: ${isProduction ? 'PRODUCTION (Railway)' : 'LOCAL DEV'}`);
-      console.log('✨ Ready!\n');
-    });
-
-  } catch (error) {
-    console.error('\n❌ Server startup failed:', error.message);
-    console.error('   Error code   :', error.code || 'N/A');
-    console.error('   Error name   :', error.name || 'N/A');
-    // Log full error for "Connection lost" which has no .code
-    if (!error.code) console.error('   Full error:', error);
-
-    if (error.code === 'ETIMEDOUT')               console.error('   └─ DB host unreachable. Check MYSQLHOST is linked in Railway dashboard.');
-    else if (error.code === 'ENOTFOUND')          console.error('   └─ DB hostname not found.');
-    else if (error.code === 'ECONNREFUSED')       console.error('   └─ DB refused connection. Is MySQL running?');
-    else if (error.code === 'ER_ACCESS_DENIED_FOR_USER') console.error('   └─ Access denied. Check MYSQLUSER / MYSQLPASSWORD.');
-
-    process.exit(1);
+  } else {
+    console.log('🔍 Syncing models (local dev)...');
+    await sequelize.sync({ alter: false });
+    console.log('✅ Models synced.');
   }
+
+  // ── Step 4: Start HTTP server ─────────────────────────────────────────────
+  app.listen(PORT, () => {
+    console.log(`\n✅ Server running on port ${PORT}`);
+    console.log(`🌐 Mode: ${isProduction ? 'PRODUCTION (Railway)' : 'LOCAL DEV'}`);
+    console.log('✨ Ready!\n');
+  });
 };
 
-init();
+// Catch any top-level unhandled error
+init().catch(err => {
+  console.error('💥 Unhandled startup error:', err.message);
+  process.exit(1);
+});
+
 
