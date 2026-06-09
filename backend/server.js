@@ -15,17 +15,28 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow server-to-server / mobile / curl with no origin header
     if (!origin) return callback(null, true);
-    
-    const allowedOrigins = ['http://localhost:5173', process.env.FRONTEND_URL];
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    
-    return callback(new Error('CORS blocked cross-origin request'), false);
+
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,           // Set this in Railway dashboard to your Vercel URL
+    ].filter(Boolean);
+
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||   // Any Vercel preview/production deploy
+      origin.endsWith('.up.railway.app'); // Any Railway frontend deploy
+
+    if (isAllowed) return callback(null, true);
+
+    console.warn(`⚠️  CORS blocked: ${origin}`);
+    return callback(new Error('CORS blocked'), false);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
 app.use(helmet());
 app.use(morgan('dev'));

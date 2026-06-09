@@ -75,7 +75,6 @@ const Login = () => {
           <GoogleLogin
             onSuccess={onGoogleSuccess}
             onError={onGoogleError}
-            useOneTap
             shape="pill"
             width="300px"
           />
